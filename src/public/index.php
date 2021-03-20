@@ -2,7 +2,6 @@
 declare(strict_types=1);
 
 use Phalcon\Di\FactoryDefault;
-use Phalcon\Mvc\Micro;
 
 error_reporting(E_ALL);
 
@@ -11,15 +10,20 @@ define('APP_PATH', BASE_PATH . '/app');
 
 try {
     /**
-     * The FactoryDefault Dependency Injector automatically registers the services that
-     * provide a full stack framework. These default services can be overidden with custom ones.
+     * The FactoryDefault Dependency Injector automatically registers
+     * the services that provide a full stack framework.
      */
     $di = new FactoryDefault();
 
     /**
-     * Include Services
+     * Read services
      */
     include APP_PATH . '/config/services.php';
+
+    /**
+     * Handle routes
+     */
+    include APP_PATH . '/config/router.php';
 
     /**
      * Get config service for use in inline setup below
@@ -32,21 +36,11 @@ try {
     include APP_PATH . '/config/loader.php';
 
     /**
-     * Starting the application
-     * Assign service locator to the application
-     */
-    $app = new Micro($di);
-
-    /**
-     * Include Application
-     */
-    include APP_PATH . '/app.php';
-
-    /**
      * Handle the request
      */
-    $app->handle($_SERVER['REQUEST_URI']);
+    $application = new \Phalcon\Mvc\Application($di);
+	echo $application->handle( $_GET['_url'] ?? '/' )->getContent();
 } catch (\Exception $e) {
-      echo $e->getMessage() . '<br>';
-      echo '<pre>' . $e->getTraceAsString() . '</pre>';
+    echo $e->getMessage() . '<br>';
+    echo '<pre>' . $e->getTraceAsString() . '</pre>';
 }
