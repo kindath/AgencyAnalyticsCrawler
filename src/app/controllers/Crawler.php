@@ -10,6 +10,7 @@ class Crawler {
 	protected $crawled_internal_urls = array();
 	protected $found_internal_urls = array();
 	protected $external_urls = array();
+	protected $crawled_pages = array();
 	protected $images = array();
 
 	public function __construct( $base_url, $output_method = 'database', $max_pages = 5 ) {
@@ -26,7 +27,7 @@ class Crawler {
 	 */
 	public function setBaseUrl( string $base_url ) : void {
 		// Follow redirects to get canonical url
-		$base_url = $this->getEffectiveUrl( $base_url );
+		$base_url          = $this->getEffectiveUrl( $base_url );
 		$this->base_url    = $base_url;
 		$this->current_url = $base_url;
 		$parsed_url        = parse_url( $base_url );
@@ -43,6 +44,7 @@ class Crawler {
 	 * @param string $base_url
 	 *
 	 * @return string
+	 * @throws \Phalcon\Exception
 	 */
 	public function getEffectiveUrl( string $base_url ) : string {
 		$ch = curl_init();
@@ -52,10 +54,13 @@ class Crawler {
 		curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, true );
 
 		curl_exec( $ch );
+		if ( curl_errno( $ch ) ) {
+			throw new \Phalcon\Exception( curl_error( $ch ) );
+		}
 		$effective_url = curl_getinfo( $ch, CURLINFO_EFFECTIVE_URL );
 		curl_close( $ch );
 
-		return $effective_url;
+		return rtrim( $effective_url, '/' );
 	}
 
 	/**
@@ -65,7 +70,7 @@ class Crawler {
 	 */
 	public function setOutputMethod( $output_method ) : void {
 		if ( ! in_array( $output_method, [ 'database', 'html' ] ) ) {
-			throw new Exception( 'Invalid output method.' );
+			throw new \Phalcon\Exception( 'Invalid output method.' );
 		}
 		$this->output_method = $output_method;
 	}
@@ -85,21 +90,48 @@ class Crawler {
 	}
 
 	public function crawl() {
+		$scan            = new Scan();
+		$scan->timestamp = date( 'Y-m-d H:i:s' );
+		// Get initial ID and timestamp
+		$scan->save();
 		while ( $this->getTotalCrawled() <= $this->getMaxPages() && $this->getTotalFound() > 0 ) {
 			$this->current_url = $this->_popPage();
 
-			// TODO: Convert to curl and log time
-			$dom = new DOMDocument( '1.0' );
-			@$dom->loadHTMLFile( $this->current_url );
+			list( $result, $load_time, $status_code ) = $this->getData( $this->current_url );
 
-			$this->_scanLinks( $dom );
-			$this->_scanImages( $dom );
+			$dom = new DOMDocument( '1.0' );
+			@$dom->loadHTML( $result );
+
+			$link_data  = $this->_scanLinks( $dom );
+			$image_data = $this->_scanImages( $dom );
+
+			$page                 = new Page();
+			$page->scan_id        = $scan->id;
+			$page->url            = $this->current_url;
+			$page->load_time      = $load_time;
+			$page->status_code    = $status_code;
+			$page->internal_links = count( $link_data['internal'] );
+			$page->external_links = count( $link_data['external'] );
+			$page->images         = count( $image_data );
+			$page->word_count     = $this->countWords( $result );
+			$page->title_length   = $this->countTitle( $dom );
+			$page->save();
+			$this->crawled_pages [] = $page;
 		}
 
-		// TODO: Redirect, display table, etc
-		echo '<pre>';
-		var_dump( $this->crawled_internal_urls, $this->found_internal_urls, $this->external_urls, $this->images );
-		//$avg_page_load, $avg_word_count, $avg_title_length
+		$scan->internal_links = count( $this->found_internal_urls ) + count( $this->crawled_internal_urls );
+		$scan->external_links = count( $this->external_urls );
+		$scan->images         = count( $this->images );
+		$scan->save();
+
+		switch ( $this->getOutputMethod() ) {
+			case 'database':
+				// TODO: Redirect to report page
+			case 'html':
+			default:
+				$this->renderHtmlTable();
+				break;
+		}
 	}
 
 	/**
@@ -132,37 +164,64 @@ class Crawler {
 	}
 
 	/**
-	 * @param \DOMDocument $dom
+	 * @param string $url
+	 *
+	 * @return array
 	 */
-	private function _scanLinks( DOMDocument $dom ) : void {
-		$anchors = $dom->getElementsByTagName( 'a' );
-		foreach ( $anchors as $element ) {
-			$href = $element->getAttribute( 'href' );
-			$this->_discoverUrl( $href );
+	private function getData( string $url ) : array {
+		$ch = curl_init();
 
-			// TODO: Log results
-		}
+		curl_setopt( $ch, CURLOPT_URL, $url );
+		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
+		curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, true );
+
+		$result      = curl_exec( $ch );
+		$load_time   = curl_getinfo( $ch, CURLINFO_TOTAL_TIME );
+		$status_code = curl_getinfo( $ch, CURLINFO_RESPONSE_CODE );
+		curl_close( $ch );
+
+		return array( $result, $load_time, $status_code );
 	}
 
 	/**
-	 * Parse a url and add it to the lists if relevant.
+	 * @param \DOMDocument $dom
 	 *
-	 * @param string $href
+	 * @return array
 	 */
-	private function _discoverUrl( string $href ) : void {
-		$href = $this->_normalizeUrl( $href );
+	private function _scanLinks( DOMDocument $dom ) : array {
+		$anchors         = $dom->getElementsByTagName( 'a' );
+		$this_page_links = array(
+			'internal' => array(),
+			'external' => array(),
+		);
 
-		// TODO:  respect robots.txt in scan?
-		//TODO: Optimize lookup.  Hashtable?
-		if ( $this->isSameDomain( $href ) ) {
-			if ( ! in_array( $href, $this->found_internal_urls ) && ! in_array( $href, $this->crawled_internal_urls ) ) {
-				$this->found_internal_urls[] = $href;
-			}
-		} else {
-			if ( ! in_array( $href, $this->external_urls ) ) {
-				$this->external_urls[] = $href;
+		foreach ( $anchors as $element ) {
+			$href = $this->_normalizeUrl( $element->getAttribute( 'href' ) );
+
+			// TODO:  respect robots.txt in scan?
+			// TODO: Optimize lookup.  Hashtable?
+			if ( $this->isSameDomain( $href ) ) {
+				if ( empty( $this_page_links['internal'][ $href ] ) ) {
+					$this_page_links['internal'][ $href ] = 1;
+				} else {
+					$this_page_links['internal'][ $href ]++;
+				}
+				if ( ! in_array( $href, $this->found_internal_urls ) && ! in_array( $href, $this->crawled_internal_urls ) ) {
+					$this->found_internal_urls[] = $href;
+				}
+			} else {
+				if ( empty( $this_page_links['external'][ $href ] ) ) {
+					$this_page_links['external'][ $href ] = 1;
+				} else {
+					$this_page_links['external'][ $href ]++;
+				}
+				if ( ! in_array( $href, $this->external_urls ) ) {
+					$this->external_urls[] = $href;
+				}
 			}
 		}
+
+		return $this_page_links;
 	}
 
 	/**
@@ -222,8 +281,9 @@ class Crawler {
 		return empty( $parsed['host'] ) || $parsed['host'] === $this->base_domain;
 	}
 
-	private function _scanImages( DOMDocument $dom ) : void {
-		$images = $dom->getElementsByTagName( 'img' );
+	private function _scanImages( DOMDocument $dom ) : array {
+		$images           = $dom->getElementsByTagName( 'img' );
+		$this_page_images = array();
 		foreach ( $images as $image ) {
 			$src = $this->_normalizeUrl( $image->getAttribute( 'src' ) );
 			if ( empty( $this->images[ $src ] ) ) {
@@ -232,8 +292,32 @@ class Crawler {
 				$this->images[ $src ]++;
 			}
 
-			// TODO: Log results
+			if ( empty( $this_page_images[ $src ] ) ) {
+				$this_page_images[ $src ] = 1;
+			} else {
+				$this_page_images[ $src ]++;
+			}
 		}
+
+		return $this_page_images;
+	}
+
+	/**
+	 * @param string $result
+	 *
+	 * @return int
+	 */
+	private function countWords( string $result ) : int {
+		return str_word_count( strip_tags( $result ) );
+	}
+
+	/**
+	 * @param \DOMDocument $dom
+	 *
+	 * @return int
+	 */
+	private function countTitle( DOMDocument $dom ) : int {
+		return str_word_count( $dom->getElementsByTagName( 'title' )->item( 0 )->textContent );
 	}
 
 	/**
@@ -241,5 +325,24 @@ class Crawler {
 	 */
 	public function getOutputMethod() : string {
 		return $this->output_method;
+	}
+
+	/**
+	 * TODO: Refactor to view.
+	 */
+	public function renderHtmlTable() {
+		foreach ( $this->crawled_pages as $crawled_page ) {
+			var_dump( $crawled_page->url );
+		}
+		echo '<table>';
+		echo '<tr>';
+		foreach ( [ 'Page URL', 'Status Code' ] as $col ) {
+			printf( '<th>%s</th>', $col );
+		}
+		echo '</tr>';
+		echo '</table>';
+		echo '<pre>';
+		var_dump( $this->crawled_internal_urls, $this->found_internal_urls, $this->external_urls, $this->images );
+		//$avg_page_load, $avg_word_count, $avg_title_length
 	}
 }
