@@ -158,7 +158,7 @@ class Crawler {
 
 		curl_setopt( $ch, CURLOPT_URL, $url );
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
-		curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, true );
+		curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, false );
 
 		$result      = curl_exec( $ch );
 		$load_time   = curl_getinfo( $ch, CURLINFO_TOTAL_TIME );
