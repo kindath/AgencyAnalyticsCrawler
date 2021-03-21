@@ -21,6 +21,6 @@ return new \Phalcon\Config([
         'pluginsDir'     => APP_PATH . '/plugins/',
         'libraryDir'     => APP_PATH . '/library/',
         'cacheDir'       => BASE_PATH . '/cache/',
-        'baseUri'        => '/',
+        'baseUri'        => getenv('BASE_URI') ?: '/dev/AgencyAnalyticsCrawler/src/',
     ]
 ]);

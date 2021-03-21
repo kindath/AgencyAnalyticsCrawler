@@ -128,7 +128,9 @@ class Crawler {
 		$this->scan->images         = count( $this->images );
 		$this->scan->save();
 
-		//TODO: Redirect to output page based on scan ID
+		$response = new Phalcon\Http\Response();
+		$response->redirect( 'scan/show/' . $this->scan->id );
+		$response->send();
 	}
 
 	/**

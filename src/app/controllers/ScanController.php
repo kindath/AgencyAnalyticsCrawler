@@ -8,8 +8,9 @@ class ScanController extends ControllerBase {
 	 */
 	public function showAction( $id = null ) {
 		if ( empty( $id ) ) {
-			// TODO: Is this intended to be a redirect instead?  hmm.
-			return $this->indexAction();
+			$response = new Phalcon\Http\Response();
+			$response->redirect( 'scan' );
+			$response->send();
 		}
 
 		$condition = 'scan_id  = ' . $id;
