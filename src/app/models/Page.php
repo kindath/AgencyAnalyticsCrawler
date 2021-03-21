@@ -17,17 +17,17 @@ class Page extends \Phalcon\Mvc\Model
      */
     public $scan_id;
 
-    /**
-     *
-     * @var double
-     */
-    public $load_time;
-
 	/**
 	 *
 	 * @var string
 	 */
 	public $url;
+
+    /**
+     *
+     * @var double
+     */
+    public $load_time;
 
     /**
      *

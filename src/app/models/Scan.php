@@ -11,11 +11,23 @@ class Scan extends \Phalcon\Mvc\Model
      */
     public $id;
 
+	/**
+	 *
+	 * @var string
+	 */
+	public $base_url;
+
     /**
      *
      * @var string
      */
     public $timestamp;
+
+	/**
+	 *
+	 * @var integer
+	 */
+	public $pages_scanned;
 
     /**
      *
