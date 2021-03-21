@@ -1,6 +1,10 @@
 <?php
 
 class Crawler {
+	/**
+	 * @var \Scan
+	 */
+	protected $scan;
 	protected $base_url;
 	protected $current_url;
 	protected $base_domain;
@@ -90,10 +94,10 @@ class Crawler {
 	}
 
 	public function crawl() {
-		$scan            = new Scan();
-		$scan->timestamp = date( 'Y-m-d H:i:s' );
+		$this->scan            = new Scan();
+		$this->scan->timestamp = date( 'Y-m-d H:i:s' );
 		// Get initial ID and timestamp
-		$scan->save();
+		$this->scan->save();
 		while ( $this->getTotalCrawled() <= $this->getMaxPages() && $this->getTotalFound() > 0 ) {
 			$this->current_url = $this->_popPage();
 
@@ -106,7 +110,7 @@ class Crawler {
 			$image_data = $this->_scanImages( $dom );
 
 			$page                 = new Page();
-			$page->scan_id        = $scan->id;
+			$page->scan_id        = $this->scan->id;
 			$page->url            = $this->current_url;
 			$page->load_time      = $load_time;
 			$page->status_code    = $status_code;
@@ -119,10 +123,10 @@ class Crawler {
 			$this->crawled_pages [] = $page;
 		}
 
-		$scan->internal_links = count( $this->found_internal_urls ) + count( $this->crawled_internal_urls );
-		$scan->external_links = count( $this->external_urls );
-		$scan->images         = count( $this->images );
-		$scan->save();
+		$this->scan->internal_links = count( $this->found_internal_urls ) + count( $this->crawled_internal_urls );
+		$this->scan->external_links = count( $this->external_urls );
+		$this->scan->images         = count( $this->images );
+		$this->scan->save();
 
 		switch ( $this->getOutputMethod() ) {
 			case 'database':
@@ -331,18 +335,44 @@ class Crawler {
 	 * TODO: Refactor to view.
 	 */
 	public function renderHtmlTable() {
-		foreach ( $this->crawled_pages as $crawled_page ) {
-			var_dump( $crawled_page->url );
+		$total_pages_crawled = count( $this->crawled_pages );
+		$total_load_time     = $total_word_count = $total_title_length = 0;
+
+		printf( '<h2>Scan %d (%s)</h2>', $this->scan->id, $this->scan->timestamp );
+		printf( '<p><strong>Pages Crawled</strong>: %d</p>', $total_pages_crawled );
+		printf( '<p><strong>Unique Internal Links</strong>: %d</p>', $this->scan->internal_links );
+		printf( '<p><strong>Unique External Links</strong>: %d</p>', $this->scan->external_links );
+		printf( '<p><strong>Unique Images</strong>: %d</p>', $this->scan->images );
+
+		$labels     = array(
+			'load_time'      => 'Load Time',
+			'status_code'    => 'Status Code',
+			'internal_links' => 'Unique Internal Links',
+			'external_links' => 'Unique External Links',
+			'images'         => 'Unique Images',
+			'word_count'     => 'Word Count',
+			'title_length'   => 'Title Length',
+		);
+		$page_table = '<table><tr><th>Page URL</th><th>';
+		$page_table .= implode( '</th><th>', $labels );
+		$page_table .= '</th></tr>';
+		/** @var Page $page */
+		foreach ( $this->crawled_pages as $page ) {
+			// This should really be a method of the model, doing a database query instead of a loop add
+			$total_load_time    += $page->load_time;
+			$total_word_count   += $page->word_count;
+			$total_title_length += $page->title_length;
+
+			$page_table .= "<tr><th><a href='{$page->url}'>{$page->url}</a></th><td>";
+			$page_table .= implode( '</td><td>', $page->toArray( array_keys( $labels ) ) );
+			$page_table .= '</td></tr>';
 		}
-		echo '<table>';
-		echo '<tr>';
-		foreach ( [ 'Page URL', 'Status Code' ] as $col ) {
-			printf( '<th>%s</th>', $col );
-		}
-		echo '</tr>';
-		echo '</table>';
-		echo '<pre>';
-		var_dump( $this->crawled_internal_urls, $this->found_internal_urls, $this->external_urls, $this->images );
-		//$avg_page_load, $avg_word_count, $avg_title_length
+		$page_table .= '</table>';
+
+		printf( '<p><strong>Average Page Load</strong>: %s</p>', round( $total_load_time / $total_pages_crawled, 2 ) );
+		printf( '<p><strong>Average Word Count</strong>: %s</p>', round( $total_word_count / $total_pages_crawled, 2 ) );
+		printf( '<p><strong>Average Title Length</strong>: %s</p>', round( $total_title_length / $total_pages_crawled, 2 ) );
+
+		echo $page_table;
 	}
 }
