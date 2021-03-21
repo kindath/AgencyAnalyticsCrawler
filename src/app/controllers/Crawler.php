@@ -172,7 +172,7 @@ class Crawler {
 	 */
 	private function _normalizeUrl( string $url ) : string {
 		$url = trim( $url );
-		if ( empty( $url ) || '#' === $url || false !== strpos( $url, 'javascript:' ) ) {
+		if ( empty( $url ) || 0 === strpos( $url, '#' ) || false !== strpos( $url, 'javascript:' ) ) {
 			return $this->current_url;
 		}
 
