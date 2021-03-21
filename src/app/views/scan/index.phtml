@@ -1,15 +1,18 @@
-<table>
+<table class="table table-striped">
+	<thead class="thead-dark">
 	<tr>
-		<th>Scan Start URL</th>
-		<th>Date</th>
-		<th>Pages Crawled</th>
-		<th>Unique Internal Links</th>
-		<th>Unique External Links</th>
-		<th>Unique Images</th>
+		<th scope="col">Scan Start URL</th>
+		<th scope="col">Date</th>
+		<th scope="col">Pages Crawled</th>
+		<th scope="col">Unique Internal Links</th>
+		<th scope="col">Unique External Links</th>
+		<th scope="col">Unique Images</th>
 	</tr>
+	</thead>
+	<tbody>
 	<?php foreach ( $scans as $scan ) : ?>
 		<tr>
-			<th><a href='scan/show/<?php echo $scan->id; ?>'><?php echo $scan->base_url; ?></a></th>
+			<th scope="row"><a href='scan/show/<?php echo $scan->id; ?>'><?php echo $scan->base_url; ?></a></th>
 			<td><?php echo date( 'D M j', strtotime( $scan->timestamp ) ); ?></td>
 			<td><?php echo $scan->pages_scanned; ?></td>
 			<td><?php echo $scan->internal_links; ?></td>
@@ -17,4 +20,5 @@
 			<td><?php echo $scan->images; ?></td>
 		</tr>
 	<?php endforeach; ?>
+	</tbody>
 </table>
