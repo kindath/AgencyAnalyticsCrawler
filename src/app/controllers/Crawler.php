@@ -25,13 +25,8 @@ class Crawler {
 	 * @param string $base_url
 	 */
 	public function setBaseUrl( string $base_url ) : void {
-		// TODO:  normalize base url better?
-		// TODO:  do an initial curl request to verify URL is legit and follow redirects for base_url (to normalize correct http/s, www)
-		// TODO:  respect robots.txt in scan?
-		// Sanity check so we can parse the url
-		if ( false === strpos( $base_url, 'http' ) ) {
-			$base_url = 'https://' . $base_url;
-		}
+		// Follow redirects to get canonical url
+		$base_url = $this->getEffectiveUrl( $base_url );
 		$this->base_url    = $base_url;
 		$this->current_url = $base_url;
 		$parsed_url        = parse_url( $base_url );
@@ -42,6 +37,25 @@ class Crawler {
 			// Default to SSL on.
 			$this->https = 'https';
 		}
+	}
+
+	/**
+	 * @param string $base_url
+	 *
+	 * @return string
+	 */
+	public function getEffectiveUrl( string $base_url ) : string {
+		$ch = curl_init();
+
+		curl_setopt( $ch, CURLOPT_URL, $base_url );
+		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
+		curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, true );
+
+		curl_exec( $ch );
+		$effective_url = curl_getinfo( $ch, CURLINFO_EFFECTIVE_URL );
+		curl_close( $ch );
+
+		return $effective_url;
 	}
 
 	/**
@@ -138,6 +152,7 @@ class Crawler {
 	private function _discoverUrl( string $href ) : void {
 		$href = $this->_normalizeUrl( $href );
 
+		// TODO:  respect robots.txt in scan?
 		//TODO: Optimize lookup.  Hashtable?
 		if ( $this->isSameDomain( $href ) ) {
 			if ( ! in_array( $href, $this->found_internal_urls ) && ! in_array( $href, $this->crawled_internal_urls ) ) {
