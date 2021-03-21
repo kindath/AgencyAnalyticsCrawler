@@ -108,7 +108,7 @@ class Crawler {
 			$page->save();
 		}
 
-		$this->scan->pages_scanned  = count( $this->crawled_internal_urls );
+		$this->scan->pages_scanned  = $this->getTotalCrawled();
 		$this->scan->internal_links = count( $this->found_internal_urls ) + count( $this->crawled_internal_urls );
 		$this->scan->external_links = count( $this->external_urls );
 		$this->scan->images         = count( $this->images );

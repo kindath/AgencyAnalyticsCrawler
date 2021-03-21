@@ -1,16 +1,30 @@
 <h1>New Scan</h1>
-<?php
-/** @var Phalcon\Forms\Form $form */
-if ( ! $form->isValid( $_POST ) ) {
-	$messages = $form->getMessages();
-
-	foreach ( $messages as $message ) {
-		echo $message, '<br>';
-	}
-}
-?>
 <form method='post'>
-	<p><?php echo $form->render( 'url' ); ?></p>
-	<p><?php echo $form->render( 'max_pages' ); ?></p>
-	<p><input type='submit' value='Submit'/></p>
+	<div class="form-group">
+		<label for="url">Scan URL</label>
+		<?php
+		if ( ! empty( $messages ) && ! empty( $messages->filter( 'url' ) ) ) {
+			echo $form->render( 'url', [ 'class' => 'form-control is-invalid' ] );
+			foreach ( $messages->filter( ( 'url' ) ) as $message ) {
+				echo "<div class='invalid-feedback'>{$message}</div>";
+			}
+		} else {
+			echo $form->render( 'url' );
+		}
+		?>
+	</div>
+	<div class="form-group">
+		<label for="max_pages">Max pages to scan</label>
+		<?php
+		if ( ! empty( $messages ) && ! empty( $messages->filter( 'max_pages' ) ) ) {
+			echo $form->render( 'max_pages', [ 'class' => 'form-control is-invalid' ] );
+			foreach ( $messages->filter( ( 'max_pages' ) ) as $message ) {
+				echo "<div class='invalid-feedback'>{$message}</div>";
+			}
+		} else {
+			echo $form->render( 'max_pages' );
+		}
+		?>
+	</div>
+	<p><input class="btn btn-success" type='submit' value='Start Scan'/></p>
 </form>

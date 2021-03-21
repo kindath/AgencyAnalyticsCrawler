@@ -57,7 +57,10 @@ class ScanController extends ControllerBase {
 	public function newAction() {
 		$this->view->form = new Form();
 
-		$url = new Text( 'url', [ 'placeholder' => 'www.url.com' ] );
+		$url = new Text( 'url', [
+			'placeholder' => 'www.url.com',
+			'class'       => 'form-control',
+		] );
 		$url->addValidator( new UrlValidator( [ 'message' => 'Crawler target must be a valid url' ] ) );
 		$this->view->form->add( $url );
 
@@ -65,6 +68,7 @@ class ScanController extends ControllerBase {
 			'min'         => 1,
 			'step'        => 1,
 			'placeholder' => 'Page limit',
+			'class'       => 'form-control',
 		] );
 		$max_pages->addValidator( new BetweenValidator( [
 			'message' => 'Page limit must be a sane value',
@@ -76,6 +80,8 @@ class ScanController extends ControllerBase {
 		if ( $this->view->form->isValid( $_POST ) ) {
 			$crawler = new Crawler( $this->view->form->getValue( 'url' ), $this->view->form->getValue( 'max_pages' ) );
 			$crawler->crawl();
+		} elseif ( ! empty( $_POST ) ) {
+			$this->view->messages = $this->view->form->getMessages();
 		}
 	}
 }
