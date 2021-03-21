@@ -9,7 +9,7 @@
 	</tr>
 	<?php foreach ( $scans as $scan ) : ?>
 		<tr>
-			<th><a href='show/<?php echo $scan->id; ?>'><?php echo $scan->base_url; ?></a></th>
+			<th><a href='scan/show/<?php echo $scan->id; ?>'><?php echo $scan->base_url; ?></a></th>
 			<td><?php echo date( 'D M j', strtotime( $scan->timestamp ) ); ?></td>
 			<td><?php echo $scan->pages_scanned; ?></td>
 			<td><?php echo $scan->internal_links; ?></td>
