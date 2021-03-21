@@ -1,5 +1,16 @@
-<form>
-	<label>URL <input type="url"></label>
-	<label>Max pages to scan <input type="number" min="1" step="1"></label>
-	<button>Crawl</button>
+<h1>New Scan</h1>
+<?php
+/** @var Phalcon\Forms\Form $form */
+if ( ! $form->isValid( $_POST ) ) {
+	$messages = $form->getMessages();
+
+	foreach ( $messages as $message ) {
+		echo $message, '<br>';
+	}
+}
+?>
+<form method='post'>
+	<p><?php echo $form->render( 'url' ); ?></p>
+	<p><?php echo $form->render( 'max_pages' ); ?></p>
+	<p><input type='submit' value='Submit'/></p>
 </form>

@@ -9,16 +9,14 @@ class Crawler {
 	protected $current_url;
 	protected $base_domain;
 	protected $https;
-	protected $output_method;
 	protected $max_pages;
 	protected $crawled_internal_urls = array();
 	protected $found_internal_urls = array();
 	protected $external_urls = array();
 	protected $images = array();
 
-	public function __construct( $base_url, $output_method = 'database', $max_pages = 5 ) {
+	public function __construct( $base_url, $max_pages = 5 ) {
 		$this->setBaseUrl( $base_url );
-		$this->setOutputMethod( $output_method );
 		$this->setMaxPages( $max_pages );
 
 		// Initialize set of found urls to the provided url
@@ -64,18 +62,6 @@ class Crawler {
 		curl_close( $ch );
 
 		return rtrim( $effective_url, '/' );
-	}
-
-	/**
-	 * @param string $output_method
-	 *
-	 * @throws \Exception
-	 */
-	public function setOutputMethod( $output_method ) : void {
-		if ( ! in_array( $output_method, [ 'database', 'html' ] ) ) {
-			throw new \Phalcon\Exception( 'Invalid output method.' );
-		}
-		$this->output_method = $output_method;
 	}
 
 	/**
@@ -317,12 +303,5 @@ class Crawler {
 	 */
 	private function countTitle( DOMDocument $dom ) : int {
 		return str_word_count( $dom->getElementsByTagName( 'title' )->item( 0 )->textContent );
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getOutputMethod() : string {
-		return $this->output_method;
 	}
 }

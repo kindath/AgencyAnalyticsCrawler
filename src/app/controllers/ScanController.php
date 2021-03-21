@@ -1,6 +1,12 @@
 <?php
 declare( strict_types=1 );
 
+use Phalcon\Forms\Element\Numeric;
+use Phalcon\Forms\Element\Text;
+use Phalcon\Forms\Form;
+use Phalcon\Validation\Validator\Between as BetweenValidator;
+use Phalcon\Validation\Validator\Url as UrlValidator;
+
 class ScanController extends ControllerBase {
 
 	/**
@@ -49,8 +55,28 @@ class ScanController extends ControllerBase {
 	}
 
 	public function newAction() {
-		$crawler = new Crawler( 'www.agencyanalytics.com' );
-		$crawler->crawl();;
+		$this->view->form = new Form();
+
+		$url = new Text( 'url', [ 'placeholder' => 'www.url.com' ] );
+		$url->addValidator( new UrlValidator( [ 'message' => 'Crawler target must be a valid url' ] ) );
+		$this->view->form->add( $url );
+
+		$max_pages = new Numeric( 'max_pages', [
+			'min'         => 1,
+			'step'        => 1,
+			'placeholder' => 'Page limit',
+		] );
+		$max_pages->addValidator( new BetweenValidator( [
+			'message' => 'Page limit must be a sane value',
+			'minimum' => 1,
+			'maximum' => 100,
+		] ) );
+		$this->view->form->add( $max_pages );
+
+		if ( $this->view->form->isValid( $_POST ) ) {
+			$crawler = new Crawler( $this->view->form->getValue( 'url' ), $this->view->form->getValue( 'max_pages' ) );
+			$crawler->crawl();
+		}
 	}
 }
 
