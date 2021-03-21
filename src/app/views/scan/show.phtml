@@ -1,0 +1,23 @@
+<h2>Scan <?php echo $scan->id; ?> (<?php echo $scan->timestamp; ?>)</h2>
+<p><strong><?php echo $pages_crawled; ?></strong> Pages Crawled</p>
+<p><strong><?php echo $scan->internal_links; ?></strong> Unique Internal Links Found</p>
+<p><strong><?php echo $scan->external_links; ?></strong> Unique External Links Found</p>
+<p><strong><?php echo $scan->images; ?></strong> Unique Images Found</p>
+<p>Average Page Response Time of <strong><?php echo $average_load_time; ?></strong> Seconds Recorded</p>
+<p><strong><?php echo $average_word_count; ?></strong> Average Words Per Page</p>
+<p>Average Title Length of <strong><?php echo $average_title_length; ?></strong> Words</p>
+
+<table>
+	<tr>
+		<th>Page URL</th>
+		<th><?php echo implode( '</th><th>', $cols ); ?></th>
+	</tr>
+	<?php foreach ( $pages as $page ) : ?>
+		<tr>
+			<th>
+				<a href='<?php echo $page->url; ?>'><?php echo $page->url; ?></a>
+			</th>
+			<td><?php echo implode( '</td><td>', $page->toArray( array_keys( $cols ) ) ); ?></td>
+		</tr>
+	<?php endforeach; ?>
+</table>

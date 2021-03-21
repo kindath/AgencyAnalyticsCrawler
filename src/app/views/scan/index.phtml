@@ -1,0 +1,20 @@
+<table>
+	<tr>
+		<th>Scan Start URL</th>
+		<th>Date</th>
+		<th>Pages Crawled</th>
+		<th>Unique Internal Links</th>
+		<th>Unique External Links</th>
+		<th>Unique Images</th>
+	</tr>
+	<?php foreach ( $scans as $scan ) : ?>
+		<tr>
+			<th><a href='show/<?php echo $scan->id; ?>'><?php echo $scan->base_url; ?></a></th>
+			<td><?php echo date( 'D M j', strtotime( $scan->timestamp ) ); ?></td>
+			<td><?php echo $scan->pages_scanned; ?></td>
+			<td><?php echo $scan->internal_links; ?></td>
+			<td><?php echo $scan->external_links; ?></td>
+			<td><?php echo $scan->images; ?></td>
+		</tr>
+	<?php endforeach; ?>
+</table>
