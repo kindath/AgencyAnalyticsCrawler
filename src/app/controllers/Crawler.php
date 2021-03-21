@@ -84,7 +84,7 @@ class Crawler {
 		$this->scan->base_url  = $this->base_url;
 		// Save to get initial ID
 		$this->scan->save();
-		while ( $this->getTotalCrawled() <= $this->getMaxPages() && $this->getTotalFound() > 0 ) {
+		while ( $this->getTotalCrawled() < $this->getMaxPages() && $this->getTotalFound() > 0 ) {
 			$this->current_url = $this->_popPage();
 
 			list( $result, $load_time, $status_code ) = $this->getData( $this->current_url );
