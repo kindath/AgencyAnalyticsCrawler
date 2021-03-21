@@ -1,6 +1,8 @@
 <?php
 
-class Pages extends \Phalcon\Mvc\Model
+use Phalcon\Mvc\ModelInterface;
+
+class Page extends \Phalcon\Mvc\Model
 {
 
     /**
@@ -21,6 +23,12 @@ class Pages extends \Phalcon\Mvc\Model
      */
     public $load_time;
 
+	/**
+	 *
+	 * @var string
+	 */
+	public $url;
+
     /**
      *
      * @var string
@@ -39,6 +47,12 @@ class Pages extends \Phalcon\Mvc\Model
      */
     public $external_links;
 
+	/**
+	 *
+	 * @var integer
+	 */
+	public $images;
+
     /**
      *
      * @var integer
@@ -51,7 +65,7 @@ class Pages extends \Phalcon\Mvc\Model
      */
     public $title_length;
 
-    /**
+	/**
      * Initialize method for model.
      */
     public function initialize()
@@ -64,7 +78,8 @@ class Pages extends \Phalcon\Mvc\Model
      * Allows to query a set of records that match the specified conditions
      *
      * @param mixed $parameters
-     * @return Pages[]|Pages|\Phalcon\Mvc\Model\ResultSetInterface
+     *
+     * @return Page[]|Page|\Phalcon\Mvc\Model\ResultSetInterface
      */
     public static function find($parameters = null): \Phalcon\Mvc\Model\ResultsetInterface
     {
@@ -75,9 +90,10 @@ class Pages extends \Phalcon\Mvc\Model
      * Allows to query the first record that match the specified conditions
      *
      * @param mixed $parameters
-     * @return Pages|\Phalcon\Mvc\Model\ResultInterface
+     *
+     * @return Page|\Phalcon\Mvc\Model\ResultInterface
      */
-    public static function findFirst($parameters = null)
+	public static function findFirst($parameters = null): ?ModelInterface
     {
         return parent::findFirst($parameters);
     }

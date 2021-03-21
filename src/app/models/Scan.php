@@ -1,6 +1,8 @@
 <?php
 
-class Scans extends \Phalcon\Mvc\Model
+use Phalcon\Mvc\ModelInterface;
+
+class Scan extends \Phalcon\Mvc\Model
 {
 
     /**
@@ -8,12 +10,6 @@ class Scans extends \Phalcon\Mvc\Model
      * @var integer
      */
     public $id;
-
-    /**
-     *
-     * @var string
-     */
-    public $url;
 
     /**
      *
@@ -52,7 +48,8 @@ class Scans extends \Phalcon\Mvc\Model
      * Allows to query a set of records that match the specified conditions
      *
      * @param mixed $parameters
-     * @return Scans[]|Scans|\Phalcon\Mvc\Model\ResultSetInterface
+     *
+     * @return Scan[]|Scan|\Phalcon\Mvc\Model\ResultSetInterface
      */
     public static function find($parameters = null): \Phalcon\Mvc\Model\ResultsetInterface
     {
@@ -63,9 +60,10 @@ class Scans extends \Phalcon\Mvc\Model
      * Allows to query the first record that match the specified conditions
      *
      * @param mixed $parameters
-     * @return Scans|\Phalcon\Mvc\Model\ResultInterface
+     *
+     * @return Scan|\Phalcon\Mvc\Model\ResultInterface
      */
-    public static function findFirst($parameters = null)
+    public static function findFirst($parameters = null): ?ModelInterface
     {
         return parent::findFirst($parameters);
     }
